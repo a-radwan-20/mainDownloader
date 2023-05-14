@@ -2,6 +2,15 @@ const axios = require('axios');
 const fs = require('fs');
 const xmlBeautifier = require('xml-beautifier');
 
+function readFile(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf-8');
+  } catch (error) {
+    console.error(`Error reading file: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 async function downloadXml(url) {
   try {
     const response = await axios.get(url, { responseType: 'text' });
@@ -22,18 +31,25 @@ function saveToTextFile(prettyXml, outputFilePath) {
 
 async function mainDownloader() {
   if (process.argv.length !== 4) {
-    console.log('Usage: node download_prettify_xml.js <XML_URL> <OUTPUT_FILE.txt>');
+    console.log('Usage: node download_prettify_xml.js <XML_URL_OR_FILE_PATH> <OUTPUT_FILE.txt>');
     process.exit(1);
   }
 
-  const xmlUrl = process.argv[2];
+  const input = process.argv[2];
   const outputFile = process.argv[3];
+  let xmlString;
 
-  const xmlString = await downloadXml(xmlUrl);
+  if (input.startsWith('http://') || input.startsWith('https://')) {
+    xmlString = await downloadXml(input);
+  } else {
+    xmlString = readFile(input);
+  }
+
   const prettyXml = prettifyXml(xmlString);
   saveToTextFile(prettyXml, outputFile);
 
   console.log(`Saved prettified XML to ${outputFile}`);
 }
+
 
 mainDownloader();
